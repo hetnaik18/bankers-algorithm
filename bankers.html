@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Banker's Algorithm</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f4f8;
+      margin: 20px;
+      padding: 0;
+      color: #333;
+    }
+    h1 {
+      text-align: center;
+      color: #2c3e50;
+    }
+    .container {
+      background: #ffffff;
+      max-width: 900px;
+      margin: auto;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    }
+    label {
+      font-weight: bold;
+      margin-right: 10px;
+    }
+    input[type="number"], input[type="text"] {
+      width: 60px;
+      padding: 6px;
+      margin: 5px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      text-align: center;
+    }
+    button {
+      padding: 8px 16px;
+      background-color: #e74c3c; /* 🔴 Red */
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      margin: 10px 0;
+    }
+    button:hover {
+      background-color: #c0392b; /* 🔴 Darker red on hover */
+    }
+    .matrix-title {
+      font-size: 18px;
+      margin-top: 20px;
+      color: #2c3e50;
+    }
+    .matrix {
+      margin-bottom: 15px;
+    }
+    #output {
+      margin-top: 20px;
+      font-size: 18px;
+      font-weight: bold;
+      padding: 10px;
+      border-radius: 8px;
+    }
+    .safe {
+      background-color: #d4edda;
+      color: #155724;
+    }
+    .unsafe {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Banker's Algorithm</h1>
+
+    <label>Number of Processes:</label>
+    <input type="number" id="numProcesses" value="3">
+    <label>Number of Resources:</label>
+    <input type="number" id="numResources" value="3">
+    <button onclick="generateMatrices()">Generate Matrices</button>
+
+    <div id="matrices"></div>
+
+    <button onclick="runBankers()">Run Banker's Algorithm</button>
+
+    <div id="output"></div>
+  </div>
+
+  <script>
+    function generateMatrices() {
+      const p = parseInt(document.getElementById("numProcesses").value);
+      const r = parseInt(document.getElementById("numResources").value);
+      const container = document.getElementById("matrices");
+      container.innerHTML = "";
+
+      const titles = ["Allocation Matrix", "Max Matrix", "Available Resources"];
+      titles.forEach((title, i) => {
+        const matrixDiv = document.createElement("div");
+        matrixDiv.className = "matrix";
+        const h3 = document.createElement("div");
+        h3.className = "matrix-title";
+        h3.innerText = title;
+        matrixDiv.appendChild(h3);
+
+        for (let row = 0; row < (i < 2 ? p : 1); row++) {
+          for (let col = 0; col < r; col++) {
+            const input = document.createElement("input");
+            input.type = "number";
+            input.id = `${title.split(" ")[0]}_${row}_${col}`;
+            matrixDiv.appendChild(input);
+          }
+          matrixDiv.appendChild(document.createElement("br"));
+        }
+
+        container.appendChild(matrixDiv);
+      });
+    }
+
+    function runBankers() {
+      const p = parseInt(document.getElementById("numProcesses").value);
+      const r = parseInt(document.getElementById("numResources").value);
+      const alloc = [], max = [], avail = [], need = [];
+
+      for (let i = 0; i < p; i++) {
+        alloc[i] = [];
+        max[i] = [];
+        need[i] = [];
+        for (let j = 0; j < r; j++) {
+          alloc[i][j] = parseInt(document.getElementById(`Allocation_${i}_${j}`).value) || 0;
+          max[i][j] = parseInt(document.getElementById(`Max_${i}_${j}`).value) || 0;
+          need[i][j] = max[i][j] - alloc[i][j];
+        }
+      }
+
+      for (let j = 0; j < r; j++) {
+        avail[j] = parseInt(document.getElementById(`Available_${0}_${j}`).value) || 0;
+      }
+
+      const finish = Array(p).fill(false);
+      const safeSeq = [];
+      let count = 0;
+
+      while (count < p) {
+        let found = false;
+        for (let i = 0; i < p; i++) {
+          if (!finish[i]) {
+            let canRun = true;
+            for (let j = 0; j < r; j++) {
+              if (need[i][j] > avail[j]) {
+                canRun = false;
+                break;
+              }
+            }
+            if (canRun) {
+              for (let j = 0; j < r; j++) {
+                avail[j] += alloc[i][j];
+              }
+              safeSeq.push("P" + i);
+              finish[i] = true;
+              found = true;
+              count++;
+            }
+          }
+        }
+        if (!found) break;
+      }
+
+      const outputDiv = document.getElementById("output");
+      if (count === p) {
+        outputDiv.innerHTML = "✅ System is in a <strong>SAFE</strong> state.<br>✔ Safe Sequence: " + safeSeq.join(" → ");
+        outputDiv.className = "safe";
+      } else {
+        outputDiv.innerHTML = "❌ System is <strong>NOT</strong> in a safe state.";
+        outputDiv.className = "unsafe";
+      }
+    }
+
+    // Auto-generate default matrices on load
+    window.onload = generateMatrices;
+  </script>
+</body>
+</html>
